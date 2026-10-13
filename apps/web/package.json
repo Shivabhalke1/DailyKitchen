@@ -11,14 +11,11 @@
     "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
-    "@dailykitchen/contracts": "*",
-    "@dailykitchen/shared-utils": "*",
-    "@dailykitchen/tokens": "*",
-    "@dailykitchen/validation": "*",
     "lucide-react": "^0.378.0",
     "next": "14.2.23",
     "react": "18.3.1",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
