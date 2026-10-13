@@ -17,7 +17,7 @@
     "dev:mobile": "npm run dev --workspace=apps/mobile"
   },
   "devDependencies": {
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "react": "18.2.0",
