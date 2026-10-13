@@ -1,0 +1,23 @@
+{
+  "name": "@dailykitchen/tokens",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical design tokens for DailyKitchen web and mobile applications",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@dailykitchen/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TypeScript contracts and API interfaces for DailyKitchen",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "generate": "npx openapi-typescript ../../docs/contracts/openapi.json -o ./src/generated/api-types.ts",
+    "contracts:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.4.5"
+  }
+}

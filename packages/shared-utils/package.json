@@ -1,0 +1,27 @@
+{
+  "name": "@dailykitchen/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared utility functions, currency formatting, and pricing calculations for DailyKitchen",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "node --test tests/pricing.test.js"
+  },
+  "dependencies": {
+    "@dailykitchen/contracts": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

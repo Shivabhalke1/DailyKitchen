@@ -1,0 +1,26 @@
+{
+  "name": "dailykitchen-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DailyKitchen — Fresh Food. Happy Homes. Monorepo for customer mobile app, web app, and shared core packages.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present --concurrency=1",
+    "test:backend": "cd backend && python3 -m pytest tests/ -v",
+    "dev:backend": "cd backend && python3 -m uvicorn app.main:app --reload --port 8000",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:mobile": "npm run dev --workspace=apps/mobile"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}
