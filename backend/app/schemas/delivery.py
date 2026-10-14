@@ -68,3 +68,14 @@ class BulkSlotCreate(BaseModel):
     zone_id: str
     slot_date: date
     slots: List[SlotCreateItem]
+
+
+class SingleSlotCreate(BaseModel):
+    """Admin payload to create a single delivery slot."""
+
+    zone_id: str
+    slot_date: date
+    slot_type: str = Field("scheduled", pattern="^(standard|express|scheduled|instant_express)$")
+    start_time: time
+    end_time: time
+    max_orders: int = Field(50, gt=0)

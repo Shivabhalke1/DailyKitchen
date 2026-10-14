@@ -81,3 +81,63 @@ async def test_list_available_slots_excludes_full(client: AsyncClient):
             ).scalar_one()
             slot.current_orders = original_current
             await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_admin_create_and_delete_zone(client: AsyncClient, admin_auth):
+    """Admin can create a new zone and delete it when unbooked."""
+    headers, _ = admin_auth
+    create_payload = {
+        "name": "Test Delete Territory",
+        "pincode": "560099",
+        "is_express_available": True,
+    }
+    create_resp = await client.post("/api/v1/admin/delivery/zones", json=create_payload, headers=headers)
+    assert create_resp.status_code == 201
+    zone_data = create_resp.json()
+    zone_id = zone_data["id"]
+
+    try:
+        # Delete the zone
+        del_resp = await client.delete(f"/api/v1/admin/delivery/zones/{zone_id}", headers=headers)
+        assert del_resp.status_code == 200
+        assert del_resp.json()["success"] is True
+
+        # Verify not found
+        get_resp = await client.get("/api/v1/delivery/zones")
+        assert zone_id not in [z["id"] for z in get_resp.json()]
+    finally:
+        # Clean up if still exists
+        async with AsyncSessionLocal() as session:
+            z = (await session.execute(select(DeliveryZone).where(DeliveryZone.id == zone_id))).scalar_one_or_none()
+            if z:
+                await session.delete(z)
+                await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_admin_create_and_delete_single_slot(client: AsyncClient, admin_auth):
+    """Admin can create a single delivery slot and delete it if unbooked."""
+    headers, _ = admin_auth
+    # Find existing zone
+    zones_resp = await client.get("/api/v1/delivery/zones")
+    zone_id = zones_resp.json()[0]["id"]
+
+    slot_payload = {
+        "zone_id": zone_id,
+        "slot_date": date.today().isoformat(),
+        "slot_type": "scheduled",
+        "start_time": "21:00:00",
+        "end_time": "23:00:00",
+        "max_orders": 15,
+    }
+
+    create_resp = await client.post("/api/v1/admin/delivery/slots/single", json=slot_payload, headers=headers)
+    assert create_resp.status_code == 201
+    slot = create_resp.json()
+    slot_id = slot["id"]
+
+    # Delete unbooked slot
+    del_resp = await client.delete(f"/api/v1/admin/delivery/slots/{slot_id}", headers=headers)
+    assert del_resp.status_code == 200
+    assert del_resp.json()["success"] is True

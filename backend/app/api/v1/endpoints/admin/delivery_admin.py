@@ -11,6 +11,7 @@ from backend.app.schemas.delivery import (
     BulkSlotCreate,
     DeliverySlotRead,
     DeliveryZoneRead,
+    SingleSlotCreate,
     ZoneCreate,
 )
 from backend.app.services.admin_service import AdminService
@@ -132,3 +133,111 @@ async def update_slot(
     """
     slot = await AdminService.update_slot(session=db, slot_id=slot_id, payload=payload)
     return DeliverySlotRead.model_validate(slot)
+
+
+@router.delete("/zones/{zone_id}")
+async def delete_delivery_zone(
+    zone_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin: delete a delivery zone and its unbooked slots."""
+    zone = (
+        await db.execute(select(DeliveryZone).where(DeliveryZone.id == zone_id))
+    ).scalar_one_or_none()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Delivery zone '{zone_id}' not found",
+        )
+
+    slots_with_orders = (
+        await db.execute(
+            select(DeliverySlot).where(
+                DeliverySlot.zone_id == zone_id,
+                DeliverySlot.current_orders > 0,
+            )
+        )
+    ).scalars().all()
+
+    if slots_with_orders:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete delivery zone: active orders are booked in its slots. Please fulfill or reassign them first.",
+        )
+
+    await db.delete(zone)
+    await db.commit()
+    return {"success": True, "message": f"Delivery zone '{zone.name}' deleted successfully", "zone_id": zone_id}
+
+
+@router.post("/slots/single", response_model=DeliverySlotRead, status_code=status.HTTP_201_CREATED)
+async def create_single_slot(
+    payload: SingleSlotCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin: create a single delivery slot window."""
+    zone = (
+        await db.execute(select(DeliveryZone).where(DeliveryZone.id == payload.zone_id))
+    ).scalar_one_or_none()
+    if not zone:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Zone '{payload.zone_id}' not found",
+        )
+
+    db_slot_type = "instant_express" if payload.slot_type in ("express", "instant_express") else "scheduled"
+
+    stmt = select(DeliverySlot).where(
+        DeliverySlot.zone_id == payload.zone_id,
+        DeliverySlot.slot_date == payload.slot_date,
+        DeliverySlot.slot_type == db_slot_type,
+        DeliverySlot.start_time == payload.start_time,
+        DeliverySlot.end_time == payload.end_time,
+    )
+    existing_slot = (await db.execute(stmt)).scalar_one_or_none()
+    if existing_slot:
+        existing_slot.max_orders = payload.max_orders
+        existing_slot.is_active = True
+        await db.commit()
+        await db.refresh(existing_slot)
+        return DeliverySlotRead.model_validate(existing_slot)
+
+    slot = DeliverySlot(
+        zone_id=payload.zone_id,
+        slot_type=db_slot_type,
+        slot_date=payload.slot_date,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        max_orders=payload.max_orders,
+        current_orders=0,
+    )
+    db.add(slot)
+    await db.commit()
+    await db.refresh(slot)
+    return DeliverySlotRead.model_validate(slot)
+
+
+@router.delete("/slots/{slot_id}")
+async def delete_delivery_slot(
+    slot_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin: delete an empty delivery slot."""
+    slot = (
+        await db.execute(select(DeliverySlot).where(DeliverySlot.id == slot_id))
+    ).scalar_one_or_none()
+    if not slot:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Delivery slot '{slot_id}' not found",
+        )
+
+    if slot.current_orders > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete delivery slot with {slot.current_orders} booked order(s). Cancel or fulfill the orders first.",
+        )
+
+    await db.delete(slot)
+    await db.commit()
+    return {"success": True, "message": "Delivery slot deleted successfully", "slot_id": slot_id}

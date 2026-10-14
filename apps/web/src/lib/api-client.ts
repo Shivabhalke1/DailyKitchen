@@ -33,6 +33,14 @@ export type InventoryAdjust = Schemas['InventoryAdjust'];
 export type InventoryRead = Schemas['InventoryRead'];
 export type ZoneCreate = Schemas['ZoneCreate'];
 export type BulkSlotCreate = Schemas['BulkSlotCreate'];
+export interface SingleSlotCreate {
+  zone_id: string;
+  slot_date: string;
+  slot_type?: string;
+  start_time: string;
+  end_time: string;
+  max_orders: number;
+}
 export type SlotUpdate = Schemas['SlotUpdate'];
 export type OrderStatusUpdate = Schemas['OrderStatusUpdate'];
 export type PaginatedOrderRead = Schemas['PaginatedOrderRead'];
@@ -594,6 +602,15 @@ export const api = {
           body: JSON.stringify(payload),
         }),
 
+      deleteZone: (zoneId: string) =>
+        request<{ success: boolean; message: string; zone_id?: string }>(
+          `/admin/delivery/zones/${zoneId}`,
+          {
+            method: 'DELETE',
+            requiresAuth: true,
+          }
+        ),
+
       listSlots: (params?: { zoneId?: string; date?: string }) => {
         const q = new URLSearchParams();
         if (params?.zoneId) q.set('zone_id', params.zoneId);
@@ -604,6 +621,13 @@ export const api = {
           requiresAuth: true,
         });
       },
+
+      createSingleSlot: (payload: SingleSlotCreate) =>
+        request<DeliverySlotRead>('/admin/delivery/slots/single', {
+          method: 'POST',
+          requiresAuth: true,
+          body: JSON.stringify(payload),
+        }),
 
       bulkCreateSlots: (payload: BulkSlotCreate) =>
         request<DeliverySlotRead[]>('/admin/delivery/slots', {
@@ -618,6 +642,15 @@ export const api = {
           requiresAuth: true,
           body: JSON.stringify(payload),
         }),
+
+      deleteSlot: (slotId: string) =>
+        request<{ success: boolean; message: string; slot_id?: string }>(
+          `/admin/delivery/slots/${slotId}`,
+          {
+            method: 'DELETE',
+            requiresAuth: true,
+          }
+        ),
     },
 
     customers: {

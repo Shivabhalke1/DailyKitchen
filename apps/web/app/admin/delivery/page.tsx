@@ -7,6 +7,7 @@ import {
   DeliverySlotRead,
   ZoneCreate,
   BulkSlotCreate,
+  SingleSlotCreate,
 } from '@/lib/api-client';
 
 export default function AdminDeliveryPage() {
@@ -21,6 +22,7 @@ export default function AdminDeliveryPage() {
 
   // Modals
   const [showZoneModal, setShowZoneModal] = useState<boolean>(false);
+  const [showSingleSlotModal, setShowSingleSlotModal] = useState<boolean>(false);
   const [showBulkSlotModal, setShowBulkSlotModal] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -30,9 +32,15 @@ export default function AdminDeliveryPage() {
   const [zonePincode, setZonePincode] = useState('');
   const [zoneExpress, setZoneExpress] = useState(true);
 
+  // Single Slot Form
+  const [singleSlotType, setSingleSlotType] = useState('scheduled');
+  const [singleSlotStartTime, setSingleSlotStartTime] = useState('09:00');
+  const [singleSlotEndTime, setSingleSlotEndTime] = useState('11:00');
+  const [singleSlotMaxOrders, setSingleSlotMaxOrders] = useState(25);
+
   // Bulk Slots Form
-  const [slotType, setSlotType] = useState('standard');
-  const [maxOrdersPerSlot, setMaxOrdersPerSlot] = useState(25);
+  const [bulkSlotType, setBulkSlotType] = useState('scheduled');
+  const [bulkMaxOrdersPerSlot, setBulkMaxOrdersPerSlot] = useState(25);
 
   const fetchZonesAndSlots = useCallback(async () => {
     setIsLoading(true);
@@ -87,21 +95,86 @@ export default function AdminDeliveryPage() {
     }
   };
 
+  const handleDeleteZone = async (zone: DeliveryZoneRead) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete delivery zone "${zone.name}" (PIN: ${zone.pincode})?\n\nNote: All unbooked slots in this zone will also be deleted. Zones with active booked orders cannot be deleted.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      await api.admin.delivery.deleteZone(zone.id);
+      const remainingZones = zones.filter((z) => z.id !== zone.id);
+      setZones(remainingZones);
+      if (selectedZoneId === zone.id) {
+        setSelectedZoneId(remainingZones.length > 0 ? remainingZones[0].id : '');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to delete delivery zone.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateSingleSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedZoneId) return;
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      const formatTime = (t: string) => (t.length === 5 ? `${t}:00` : t);
+      const payload: SingleSlotCreate = {
+        zone_id: selectedZoneId,
+        slot_date: selectedDate,
+        slot_type: singleSlotType,
+        start_time: formatTime(singleSlotStartTime),
+        end_time: formatTime(singleSlotEndTime),
+        max_orders: Number(singleSlotMaxOrders),
+      };
+
+      await api.admin.delivery.createSingleSlot(payload);
+      setShowSingleSlotModal(false);
+      await fetchZonesAndSlots();
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to create delivery slot.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSlot = async (slot: DeliverySlotRead) => {
+    if (slot.current_orders > 0) {
+      alert(`Cannot delete slot with ${slot.current_orders} active booked order(s). Cancel or fulfill the orders first.`);
+      return;
+    }
+    const confirmed = window.confirm(
+      `Delete delivery slot window ${slot.start_time.slice(0, 5)} — ${slot.end_time.slice(0, 5)} on ${slot.slot_date}?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.admin.delivery.deleteSlot(slot.id);
+      setSlots((prev) => prev.filter((s) => s.id !== slot.id));
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete delivery slot.');
+    }
+  };
+
   const handleBulkCreateDefaultSlots = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedZoneId) return;
     setIsSubmitting(true);
     setFormError(null);
     try {
-      const normalizedSlotType = (slotType === 'scheduled' || slotType === 'standard') ? 'standard' : 'express';
+      const normalizedSlotType = (bulkSlotType === 'scheduled' || bulkSlotType === 'standard') ? 'standard' : 'express';
       // Default daily 2-hour distribution windows
       const defaultSlots = [
-        { slot_type: normalizedSlotType, start_time: '06:00:00', end_time: '08:00:00', max_orders: maxOrdersPerSlot },
-        { slot_type: normalizedSlotType, start_time: '08:00:00', end_time: '10:00:00', max_orders: maxOrdersPerSlot },
-        { slot_type: normalizedSlotType, start_time: '10:00:00', end_time: '12:00:00', max_orders: maxOrdersPerSlot },
-        { slot_type: normalizedSlotType, start_time: '14:00:00', end_time: '16:00:00', max_orders: maxOrdersPerSlot },
-        { slot_type: normalizedSlotType, start_time: '16:00:00', end_time: '18:00:00', max_orders: maxOrdersPerSlot },
-        { slot_type: normalizedSlotType, start_time: '18:00:00', end_time: '20:00:00', max_orders: maxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '06:00:00', end_time: '08:00:00', max_orders: bulkMaxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '08:00:00', end_time: '10:00:00', max_orders: bulkMaxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '10:00:00', end_time: '12:00:00', max_orders: bulkMaxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '14:00:00', end_time: '16:00:00', max_orders: bulkMaxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '16:00:00', end_time: '18:00:00', max_orders: bulkMaxOrdersPerSlot },
+        { slot_type: normalizedSlotType, start_time: '18:00:00', end_time: '20:00:00', max_orders: bulkMaxOrdersPerSlot },
       ];
 
       const payload: BulkSlotCreate = {
@@ -160,15 +233,24 @@ export default function AdminDeliveryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => {
               setFormError(null);
               setShowZoneModal(true);
             }}
-            className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold min-h-[44px]"
+            className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold min-h-[44px] transition-colors"
           >
             + Add Zone
+          </button>
+          <button
+            onClick={() => {
+              setFormError(null);
+              setShowSingleSlotModal(true);
+            }}
+            className="px-3.5 py-2 rounded-lg bg-emerald-800/80 hover:bg-emerald-700 border border-emerald-600/40 text-white text-xs font-semibold min-h-[44px] transition-colors"
+          >
+            + Add Slot Window
           </button>
           <button
             onClick={() => {
@@ -185,9 +267,15 @@ export default function AdminDeliveryPage() {
       {error && (
         <div
           role="alert"
-          className="p-4 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-sm"
+          className="p-4 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-sm flex items-center justify-between"
         >
-          {error}
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-rose-400 hover:text-white text-xs underline ml-4"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 
@@ -197,7 +285,7 @@ export default function AdminDeliveryPage() {
           <div
             key={z.id}
             onClick={() => setSelectedZoneId(z.id)}
-            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+            className={`p-4 rounded-xl border transition-all cursor-pointer relative group ${
               selectedZoneId === z.id
                 ? 'bg-slate-900 border-emerald-500 shadow-md shadow-emerald-950/40'
                 : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
@@ -205,21 +293,44 @@ export default function AdminDeliveryPage() {
           >
             <div className="flex items-center justify-between">
               <span className="font-bold text-white text-sm">{z.name}</span>
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-950 text-slate-300 border border-slate-800">
-                PIN: {z.pincode}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-slate-950 text-slate-300 border border-slate-800">
+                  PIN: {z.pincode}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteZone(z);
+                  }}
+                  className="p-1.5 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-950/60 transition-colors"
+                  title={`Delete Zone ${z.name}`}
+                  aria-label={`Delete zone ${z.name}`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs">
-              <span
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                  z.is_express_available
-                    ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                    : 'bg-slate-800 text-slate-400'
-                }`}
-              >
-                {z.is_express_available ? '⚡ Express 30m Active' : 'Scheduled Only'}
-              </span>
-              <span className="text-emerald-400 font-medium">● Serviceable</span>
+            <div className="mt-3 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                    z.is_express_available
+                      ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {z.is_express_available ? '⚡ Express 30m Active' : 'Scheduled Only'}
+                </span>
+                <span className="text-emerald-400 font-medium">● Serviceable</span>
+              </div>
             </div>
           </div>
         ))}
@@ -289,7 +400,7 @@ export default function AdminDeliveryPage() {
               ) : slots.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-500">
-                    No delivery slots created for this zone and date. Click &ldquo;Bulk Schedule Windows&rdquo; above.
+                    No delivery slots created for this zone and date. Click &ldquo;+ Add Slot Window&rdquo; or &ldquo;Bulk Schedule Windows&rdquo; above.
                   </td>
                 </tr>
               ) : (
@@ -377,6 +488,31 @@ export default function AdminDeliveryPage() {
                           >
                             {slot.is_active ? 'Freeze' : 'Unfreeze'}
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSlot(slot)}
+                            disabled={slot.current_orders > 0}
+                            className={`p-1.5 rounded transition-colors ${
+                              slot.current_orders > 0
+                                ? 'text-slate-600 cursor-not-allowed opacity-40'
+                                : 'text-slate-400 hover:text-rose-400 hover:bg-rose-950/60'
+                            }`}
+                            title={
+                              slot.current_orders > 0
+                                ? `Cannot delete slot with ${slot.current_orders} active booked order(s)`
+                                : 'Delete Delivery Slot'
+                            }
+                            aria-label="Delete Delivery Slot"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -455,6 +591,114 @@ export default function AdminDeliveryPage() {
         </div>
       )}
 
+      {/* Add Single Slot Modal */}
+      {showSingleSlotModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+            <h2 className="text-base font-bold text-white">Add Delivery Slot Window</h2>
+            <p className="text-xs text-slate-400">
+              Add a custom delivery window for{' '}
+              <span className="text-emerald-400 font-semibold">
+                {zones.find((z) => z.id === selectedZoneId)?.name || 'Selected Zone'}
+              </span>{' '}
+              on <span className="text-emerald-400 font-semibold">{selectedDate}</span>.
+            </p>
+            {formError && (
+              <div role="alert" className="p-3 rounded-lg bg-rose-950 border border-rose-800 text-rose-300 text-xs">
+                {formError}
+              </div>
+            )}
+            <form onSubmit={handleCreateSingleSlot} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold uppercase text-slate-300 mb-1">Target Zone</label>
+                <select
+                  value={selectedZoneId}
+                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                  className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px]"
+                >
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name} (PIN: {z.pincode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold uppercase text-slate-300 mb-1">Slot Date</label>
+                <input
+                  type="date"
+                  required
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px] font-mono"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold uppercase text-slate-300 mb-1">Slot Type</label>
+                <select
+                  value={singleSlotType}
+                  onChange={(e) => setSingleSlotType(e.target.value)}
+                  className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px]"
+                >
+                  <option value="scheduled">Standard Scheduled Window</option>
+                  <option value="instant_express">Express Window (30-min)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold uppercase text-slate-300 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={singleSlotStartTime}
+                    onChange={(e) => setSingleSlotStartTime(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px] font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold uppercase text-slate-300 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    required
+                    value={singleSlotEndTime}
+                    onChange={(e) => setSingleSlotEndTime(e.target.value)}
+                    className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px] font-mono"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block font-semibold uppercase text-slate-300 mb-1">Max Order Capacity</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  max={500}
+                  value={singleSlotMaxOrders}
+                  onChange={(e) => setSingleSlotMaxOrders(parseInt(e.target.value) || 25)}
+                  className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px]"
+                />
+              </div>
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold min-h-[44px]"
+                >
+                  {isSubmitting ? 'Creating Slot...' : 'Create Slot Window'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSingleSlotModal(false)}
+                  className="px-4 py-2.5 rounded-lg bg-slate-800 text-slate-300 font-semibold min-h-[44px]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Bulk Create Slots Modal */}
       {showBulkSlotModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -473,8 +717,8 @@ export default function AdminDeliveryPage() {
               <div>
                 <label className="block font-semibold uppercase text-slate-300 mb-1">Slot Type</label>
                 <select
-                  value={slotType}
-                  onChange={(e) => setSlotType(e.target.value)}
+                  value={bulkSlotType}
+                  onChange={(e) => setBulkSlotType(e.target.value)}
                   className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px]"
                 >
                   <option value="scheduled">Standard Scheduled</option>
@@ -488,8 +732,8 @@ export default function AdminDeliveryPage() {
                   required
                   min={5}
                   max={200}
-                  value={maxOrdersPerSlot}
-                  onChange={(e) => setMaxOrdersPerSlot(parseInt(e.target.value) || 25)}
+                  value={bulkMaxOrdersPerSlot}
+                  onChange={(e) => setBulkMaxOrdersPerSlot(parseInt(e.target.value) || 25)}
                   className="w-full p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 min-h-[40px]"
                 />
               </div>
