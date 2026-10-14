@@ -3,9 +3,14 @@ from decimal import Decimal
 import secrets
 from typing import List, Optional, Tuple
 from fastapi import HTTPException, status
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+
+def _clamp_zero(expr):
+    """Cross-database floor at zero (ANSI SQL compatible with PostgreSQL and SQLite)."""
+    return case((expr > 0, expr), else_=0)
 
 from backend.app.core.config import settings
 from backend.app.models.cart import Cart, CartItem
@@ -354,8 +359,8 @@ class OrderService:
                 update(Inventory)
                 .where(Inventory.variant_id == reservation.variant_id)
                 .values(
-                    reserved_quantity=func.max(
-                        0, Inventory.reserved_quantity - reservation.quantity
+                    reserved_quantity=_clamp_zero(
+                        Inventory.reserved_quantity - reservation.quantity
                     )
                 )
             )
@@ -390,7 +395,7 @@ class OrderService:
             update(DeliverySlot)
             .where(DeliverySlot.id == order.slot_id)
             .values(
-                current_orders=func.max(0, DeliverySlot.current_orders - 1)
+                current_orders=_clamp_zero(DeliverySlot.current_orders - 1)
             )
         )
         await session.execute(slot_update)
@@ -441,7 +446,7 @@ class OrderService:
                 update(DeliverySlot)
                 .where(DeliverySlot.id == order.slot_id)
                 .values(
-                    current_orders=func.max(0, DeliverySlot.current_orders - 1)
+                    current_orders=_clamp_zero(DeliverySlot.current_orders - 1)
                 )
             )
             await session.execute(slot_update)
@@ -458,11 +463,11 @@ class OrderService:
                     update(Inventory)
                     .where(Inventory.variant_id == reservation.variant_id)
                     .values(
-                        stock_quantity=func.max(
-                            0, Inventory.stock_quantity - reservation.quantity
+                        stock_quantity=_clamp_zero(
+                            Inventory.stock_quantity - reservation.quantity
                         ),
-                        reserved_quantity=func.max(
-                            0, Inventory.reserved_quantity - reservation.quantity
+                        reserved_quantity=_clamp_zero(
+                            Inventory.reserved_quantity - reservation.quantity
                         ),
                     )
                 )
