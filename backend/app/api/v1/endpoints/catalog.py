@@ -45,7 +45,7 @@ async def list_products(
     fresh: Optional[bool] = Query(None, description="Filter for fresh-today produce"),
     q: Optional[str] = Query(None, description="Text search on product name or description"),
     page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Page size"),
+    page_size: int = Query(20, ge=1, le=500, description="Page size"),
     db: AsyncSession = Depends(get_db),
 ):
     """List catalog products with pagination, filtering, and eager-loaded variants."""

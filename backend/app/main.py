@@ -1,6 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -23,10 +26,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: ensure upload directories exist
+    upload_dir = os.path.join(os.getcwd(), "uploads")
+    os.makedirs(os.path.join(upload_dir, "catalog"), exist_ok=True)
+
     # Startup: ensure tables are created in development if using sqlite
     if "sqlite" in settings.DATABASE_URL:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            try:
+                await conn.execute(text("ALTER TABLE categories ADD COLUMN default_price NUMERIC(10, 2)"))
+            except Exception:
+                pass
     yield
     # Shutdown: clean up DB connections
     await engine.dispose()
@@ -40,6 +51,12 @@ app = FastAPI(
     redoc_url=f"{settings.API_V1_STR}/redoc",
     lifespan=lifespan,
 )
+
+# Mount local uploads directory for stored images
+upload_dir = os.path.join(os.getcwd(), "uploads")
+os.makedirs(os.path.join(upload_dir, "catalog"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
+
 
 # Enforce security headers
 app.add_middleware(SecurityHeadersMiddleware)

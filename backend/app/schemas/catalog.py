@@ -71,6 +71,7 @@ class CategoryRead(BaseModel):
     image_url: str
     display_order: int
     is_active: bool
+    default_price: Optional[Decimal] = None
 
 
 class CategoryWithProductCount(CategoryRead):
@@ -97,16 +98,20 @@ class CategoryCreate(BaseModel):
     description: Optional[str] = None
     image_url: str = Field(..., max_length=500)
     display_order: int = 0
+    is_active: bool = True
+    default_price: Optional[Decimal] = None
 
 
 class CategoryUpdate(BaseModel):
     """Admin payload to update category."""
 
     name: Optional[str] = Field(None, max_length=100)
+    slug: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = None
     image_url: Optional[str] = Field(None, max_length=500)
     display_order: Optional[int] = None
     is_active: Optional[bool] = None
+    default_price: Optional[Decimal] = None
 
 
 class ProductCreate(BaseModel):
@@ -119,17 +124,28 @@ class ProductCreate(BaseModel):
     image_url: str = Field(..., max_length=500)
     is_fresh_today: bool = True
     is_popular: bool = False
+    is_active: bool = True
 
 
 class ProductUpdate(BaseModel):
     """Admin payload to update product."""
 
+    category_id: Optional[str] = None
     name: Optional[str] = None
+    slug: Optional[str] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
     is_fresh_today: Optional[bool] = None
     is_popular: Optional[bool] = None
     is_active: Optional[bool] = None
+
+
+class ProductPricingUpdate(BaseModel):
+    """Admin payload to quickly set an item's selling price and MRP."""
+
+    price: Decimal = Field(..., ge=0)
+    mrp: Optional[Decimal] = Field(None, ge=0)
+    variant_id: Optional[str] = None
 
 
 class VariantCreate(BaseModel):
@@ -145,9 +161,13 @@ class VariantCreate(BaseModel):
 class VariantUpdate(BaseModel):
     """Admin payload to update variant."""
 
+    weight_label: Optional[str] = Field(None, min_length=1, max_length=50)
+    weight_grams: Optional[int] = Field(None, gt=0)
     price: Optional[Decimal] = None
     mrp: Optional[Decimal] = None
     is_available: Optional[bool] = None
+    display_order: Optional[int] = None
+
     display_order: Optional[int] = None
 
 

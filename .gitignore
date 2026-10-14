@@ -32,6 +32,10 @@ build/
 *.sqlite3
 dailykitchen.db
 
+# User uploaded media assets
+uploads/catalog/*
+!uploads/catalog/.gitkeep
+
 # Next.js build output & caches
 .next/
 out/

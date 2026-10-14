@@ -2,7 +2,9 @@ import { GeneratedApi } from '@dailykitchen/contracts';
 
 type Schemas = GeneratedApi.components['schemas'];
 
-export type CategoryRead = Schemas['CategoryRead'];
+export type CategoryRead = Schemas['CategoryRead'] & {
+  default_price?: string | null;
+};
 export type ProductRead = Schemas['ProductRead'];
 export type ProductVariantRead = Schemas['ProductVariantRead'];
 export type PaginatedProductRead = Schemas['PaginatedProductRead'];
@@ -23,10 +25,29 @@ export type OtpSendResponse = Schemas['OtpSendResponse'];
 export type PaymentRead = Schemas['PaymentRead'];
 export type PaymentIntentCreate = Schemas['PaymentIntentCreate'];
 export type DashboardMetricsRead = Schemas['DashboardMetricsRead'];
-export type CategoryCreate = Schemas['CategoryCreate'];
-export type CategoryUpdate = Schemas['CategoryUpdate'];
-export type ProductCreate = Schemas['ProductCreate'];
-export type ProductUpdate = Schemas['ProductUpdate'];
+export type CategoryCreate = Schemas['CategoryCreate'] & {
+  is_active?: boolean;
+  default_price?: string | null;
+};
+export type CategoryUpdate = Partial<Schemas['CategoryUpdate']> & {
+  slug?: string;
+  default_price?: string | null;
+  is_active?: boolean;
+};
+export type ProductCreate = Schemas['ProductCreate'] & {
+  is_active?: boolean;
+};
+export type ProductUpdate = Partial<Schemas['ProductUpdate']> & {
+  category_id?: string;
+  slug?: string;
+  is_active?: boolean;
+};
+export interface ProductPricingUpdate {
+  price: string;
+  mrp?: string;
+  variant_id?: string;
+}
+
 export type VariantCreate = Schemas['VariantCreate'];
 export type VariantUpdate = Schemas['VariantUpdate'];
 export type InventoryAdjust = Schemas['InventoryAdjust'];
@@ -499,8 +520,15 @@ export const api = {
 
     catalog: {
       getCategories: () =>
-        request<CategoryRead[]>('/catalog/categories', {
+        request<CategoryRead[]>('/admin/catalog/categories', {
           method: 'GET',
+          requiresAuth: true,
+        }),
+
+      getProducts: () =>
+        request<ProductRead[]>('/admin/catalog/products', {
+          method: 'GET',
+          requiresAuth: true,
         }),
 
       createCategory: (payload: CategoryCreate) =>
@@ -587,6 +615,30 @@ export const api = {
             requiresAuth: true,
           }
         ),
+
+      uploadImage: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return request<{
+          success: boolean;
+          image_url: string;
+          filename: string;
+          original_filename: string;
+          size_bytes: number;
+          content_type: string;
+        }>('/admin/catalog/upload-image', {
+          method: 'POST',
+          requiresAuth: true,
+          body: formData,
+        });
+      },
+
+      updateProductPricing: (productId: string, payload: ProductPricingUpdate) =>
+        request<ProductRead>(`/admin/catalog/products/${productId}/pricing`, {
+          method: 'PUT',
+          requiresAuth: true,
+          body: JSON.stringify(payload),
+        }),
     },
 
     delivery: {
