@@ -32,11 +32,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           {/* Top Announcement Bar */}
           <aside
             aria-label="Delivery announcement"
-            className="bg-brand-800 text-brand-50 text-[11px] sm:text-xs py-2 px-4 text-center font-semibold tracking-wide"
+            className="bg-emerald-800 text-white text-[11px] sm:text-xs py-2 px-4 text-center font-semibold tracking-wide shadow-xs"
           >
-            <span>
-              🌱 Free Delivery on orders ₹99 &amp; above • Flat ₹10 Eco-Packaging Fee • Freshly Harvested Daily
-            </span>
+            <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5">
+                <span>🌱</span>
+                <span>Free Delivery on orders ₹99 &amp; above</span>
+                <span className="opacity-40">•</span>
+                <span>Flat ₹10 Eco-Packaging Fee</span>
+                <span className="opacity-40">•</span>
+                <span>Freshly Harvested Daily</span>
+              </span>
+            </div>
           </aside>
 
           {/* Navigation Header */}

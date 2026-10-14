@@ -19,10 +19,34 @@ import {
   Loader2,
   RefreshCw,
   ShoppingBag,
+  Scale,
+  Zap,
+  CheckCircle2,
+  Star,
+  Clock,
 } from 'lucide-react';
 import { calculatePricing, formatINR } from '@dailykitchen/shared-utils';
 
+const ROTATING_PHRASES = [
+  { text: 'Crisp Daily Greens', highlight: 'from-emerald-300 via-teal-200 to-emerald-400', emoji: '🥬' },
+  { text: 'Sun-Ripened Tomatoes', highlight: 'from-rose-400 via-amber-300 to-orange-300', emoji: '🍅' },
+  { text: 'Farm-Fresh Veggies', highlight: 'from-lime-300 via-emerald-300 to-teal-200', emoji: '🥦' },
+  { text: 'Sweet Orchard Fruits', highlight: 'from-amber-300 via-orange-300 to-rose-300', emoji: '🍎' },
+  { text: 'A2 Fresh Farm Milk', highlight: 'from-sky-300 via-teal-200 to-emerald-300', emoji: '🥛' },
+];
+
 export default function HomePage() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % ROTATING_PHRASES.length);
+    }, 2800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentPhrase = ROTATING_PHRASES[phraseIndex];
+
   const [categories, setCategories] = useState<CategoryRead[]>([]);
   const [products, setProducts] = useState<ProductRead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,36 +114,46 @@ export default function HomePage() {
 
   return (
     <div className="space-y-10 sm:space-y-14">
-      {/* Hero Showcase Section - Impression Seeker UI */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900 via-emerald-950 to-slate-950 text-white border border-emerald-800/40 shadow-2xl shadow-emerald-950/40">
-        {/* Glow ambient background elements */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-brand-600/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Hero Showcase Section - Dynamic Living Harvest UI */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-950 via-[#031d14] to-slate-950 text-white border border-emerald-500/20 shadow-2xl shadow-emerald-950/60 ring-1 ring-white/10">
+        {/* Multilayered ambient animated lighting */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none animate-ambient-pulse" />
+        <div className="absolute top-1/2 -right-32 w-[30rem] h-[30rem] bg-teal-500/15 rounded-full blur-[120px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-24 left-1/3 w-80 h-80 bg-amber-400/10 rounded-full blur-[90px] pointer-events-none animate-ambient-pulse" style={{ animationDelay: '1.5s' }} />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-6 sm:p-10 lg:p-12">
-          {/* Left Column: Compelling Headlines, Quick Search & Transparency Metrics */}
+        {/* Ambient fine dot grid overlay */}
+        <div 
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+            backgroundSize: '28px 28px',
+          }}
+        />
+
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center p-6 sm:p-10 lg:p-12">
+          {/* Left Column: Kinetic Headlines, Search, & Live Hub Ticker */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 bg-emerald-900/80 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-200 border border-emerald-500/40 shadow-sm">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Harvested This Morning &bull; Zero Storage Loss</span>
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
-                Fresh Food. <br />
-                <span className="bg-gradient-to-r from-emerald-400 via-emerald-300 to-lime-300 bg-clip-text text-transparent">
-                  Happy Homes.
+            {/* Kinetic Dynamic Headline */}
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-black tracking-tight leading-[1.12] text-white">
+                Farm to Kitchen. <br />
+                <span className="inline-flex items-center gap-2.5 mt-1 flex-wrap">
+                  <span className={`bg-gradient-to-r ${currentPhrase.highlight} bg-clip-text text-transparent transition-all duration-500`}>
+                    {currentPhrase.text}
+                  </span>
+                  <span className="text-3xl sm:text-4xl inline-block transition-transform duration-300 hover:scale-125">
+                    {currentPhrase.emoji}
+                  </span>
                 </span>
               </h1>
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl font-normal pt-1">
-                Directly harvested daily vegetables, crisp greens, and orchard fruits delivered in under 30 minutes. 100% transparent weighing, zero hidden charges, and honest local farm pricing.
+              <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-xl font-normal">
+                Directly harvested at dawn from local Karnataka partner farms. Delivered within 30 minutes with certified 100% digital tare-weight transparency and zero storage loss.
               </p>
             </div>
 
-            {/* Interactive Search Bar */}
+            {/* Interactive Search Bar & Quick Filtering Chips */}
             <div className="space-y-3 pt-1 max-w-xl">
-              <div className="relative flex items-center shadow-lg rounded-2xl group">
+              <div className="relative flex items-center shadow-2xl rounded-2xl group transition-all duration-300 focus-within:scale-[1.01]">
                 <Search className="w-5 h-5 text-emerald-400 absolute left-4 pointer-events-none group-focus-within:text-emerald-300 transition-colors" />
                 <input
                   type="search"
@@ -127,21 +161,25 @@ export default function HomePage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search fresh tomatoes, palak, carrots, onions..."
                   aria-label="Search produce"
-                  className="w-full pl-12 pr-16 py-3.5 text-sm sm:text-base rounded-2xl bg-slate-900/90 text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 border border-slate-700/80 shadow-inner font-medium backdrop-blur-md transition-all"
+                  className="w-full pl-12 pr-20 py-4 text-sm sm:text-base rounded-2xl bg-white/[0.07] hover:bg-white/[0.1] text-white placeholder:text-slate-400 focus:outline-none focus:bg-slate-900/90 focus:ring-2 focus:ring-emerald-400/80 border border-white/15 focus:border-emerald-400 shadow-inner font-medium backdrop-blur-xl transition-all"
                 />
-                {searchQuery && (
+                {searchQuery ? (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-4 text-xs font-semibold text-slate-400 hover:text-white"
+                    className="absolute right-4 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors"
                   >
                     Clear
                   </button>
+                ) : (
+                  <div className="absolute right-3.5 hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 border border-white/10 text-[10px] text-slate-400 font-mono">
+                    <span>Quick Find</span>
+                  </div>
                 )}
               </div>
 
               {/* Quick Search Chips */}
-              <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                <span className="text-slate-400 font-semibold mr-1">Trending:</span>
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="text-slate-400 font-semibold text-xs mr-0.5">Popular:</span>
                 {[
                   { label: '🍅 Tomatoes', query: 'tomato' },
                   { label: '🥔 Potatoes', query: 'potato' },
@@ -152,7 +190,7 @@ export default function HomePage() {
                   <button
                     key={chip.label}
                     onClick={() => setSearchQuery(chip.query)}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-800/60 text-emerald-200 text-[11px] font-medium transition-all hover:scale-105"
+                    className="px-3 py-1 rounded-full bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-400/40 text-slate-300 hover:text-emerald-200 text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95"
                   >
                     {chip.label}
                   </button>
@@ -160,101 +198,74 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-2 max-w-lg border-t border-emerald-900/60 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-emerald-300 shrink-0">
+            {/* Transparency Pillars */}
+            <div className="grid grid-cols-3 gap-3 pt-2 max-w-xl border-t border-white/10">
+              <div className="p-3 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-emerald-500/40 transition-all duration-300 group">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center text-emerald-300 mb-2 group-hover:scale-110 transition-transform">
                   <Truck className="w-4 h-4" />
                 </div>
-                <div>
-                  <div className="font-bold text-white text-[12px]">30 Min</div>
-                  <div className="text-[10px] text-slate-400">Express Slots</div>
-                </div>
+                <div className="font-bold text-white text-xs sm:text-sm">25-30 Min</div>
+                <div className="text-[11px] text-slate-400">Hyperlocal Hubs</div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-emerald-300 shrink-0">
+              <div className="p-3 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-emerald-500/40 transition-all duration-300 group">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-2 group-hover:scale-110 transition-transform">
+                  <Scale className="w-4 h-4" />
+                </div>
+                <div className="font-bold text-white text-xs sm:text-sm">0g Tare Fraud</div>
+                <div className="text-[11px] text-slate-400">100% Net Weight</div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/10 hover:border-emerald-500/40 transition-all duration-300 group">
+                <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-400/30 flex items-center justify-center text-teal-300 mb-2 group-hover:scale-110 transition-transform">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <div>
-                  <div className="font-bold text-white text-[12px]">100% Exact</div>
-                  <div className="text-[10px] text-slate-400">Net Gram Weight</div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-emerald-900/50 border border-emerald-700/50 flex items-center justify-center text-emerald-300 shrink-0">
-                  <Leaf className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-white text-[12px]">Morning Pick</div>
-                  <div className="text-[10px] text-slate-400">4:30 AM Harvest</div>
-                </div>
+                <div className="font-bold text-white text-xs sm:text-sm">Ozone Washed</div>
+                <div className="text-[11px] text-slate-400">0% Harmful Residue</div>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Visual Impression Seeker Hero Photo & Floating Badges */}
-          <div className="lg:col-span-5 relative flex items-center justify-center pt-4 lg:pt-0">
-            <div className="relative w-full max-w-md lg:max-w-none group">
-              {/* Decorative behind glow */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-lime-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-50 transition duration-700" />
+          {/* Right Column: Clean, Cinematic Harvest Visual Showcase */}
+          <div className="lg:col-span-5 relative flex items-center justify-center pt-6 lg:pt-0">
+            <div className="relative w-full max-w-md lg:max-w-none">
+              
+              {/* Layered Ambient Light Glow */}
+              <div className="absolute -inset-4 bg-gradient-to-tr from-emerald-500/25 via-teal-400/20 to-lime-500/25 rounded-3xl blur-3xl opacity-60 animate-ambient-pulse pointer-events-none" />
 
-              {/* Main Photo Card */}
-              <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-500/30 shadow-2xl shadow-emerald-950/80 bg-slate-900 aspect-[4/3]">
-                <img
-                  src="/images/hero-harvest.jpg"
-                  alt="DailyKitchen Morning Farm Harvest"
-                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-                />
-
-                {/* Subtle gradient overlay at bottom of photo */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/20 pointer-events-none" />
-
-                {/* Top Badge on image */}
-                <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 bg-slate-950/75 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 text-[11px] font-bold text-white shadow-lg">
-                  <span className="text-amber-400">★ 4.9</span>
-                  <span className="text-slate-300">&bull; 10,000+ Happy Kitchens</span>
+              {/* Main Visual Harvest Showcase Card */}
+              <div className="relative rounded-3xl overflow-hidden border border-white/20 bg-slate-900/90 shadow-2xl shadow-emerald-950/80 group">
+                <div className="aspect-[4/3] w-full overflow-hidden relative">
+                  <img
+                    src="/images/hero-harvest.jpg"
+                    alt="DailyKitchen Dawn Farm Harvest"
+                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
+                  />
+                  {/* Subtle vignette overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none" />
                 </div>
 
-                {/* Bottom Overlay on image */}
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between bg-slate-950/75 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 shadow-lg">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-bold text-sm">
+                {/* Clean, Integrated Bottom Status Bar */}
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between bg-slate-950/85 backdrop-blur-xl px-4 py-3 rounded-2xl border border-white/15 shadow-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 font-bold text-base">
                       🌱
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white">100% Pesticide Free</div>
-                      <div className="text-[10px] text-slate-300">Cleaned &amp; ozone sanitised</div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Pesticide-Free Certified</span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      </div>
+                      <div className="text-[10px] text-slate-300">Cleaned &amp; ozone sanitised &bull; 4:30 AM Pick</div>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-md bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider">
-                    Fresh
-                  </span>
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>4.96</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Floating Badge 1 - Top Right */}
-              <div className="hidden sm:flex absolute -top-4 -right-4 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-3 shadow-xl items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-800 flex items-center justify-center text-emerald-400">
-                  <Sparkles className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white">Morning Crisp</div>
-                  <div className="text-[10px] text-emerald-400 font-semibold">Dew drops intact</div>
-                </div>
-              </div>
-
-              {/* Floating Badge 2 - Bottom Left */}
-              <div className="hidden sm:flex absolute -bottom-4 -left-4 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 rounded-2xl p-3 shadow-xl items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-950 border border-amber-800 flex items-center justify-center text-amber-400">
-                  <Truck className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-white">Free Delivery</div>
-                  <div className="text-[10px] text-slate-400">Orders above ₹99</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
