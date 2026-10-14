@@ -5,13 +5,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const backendOrigin = process.env.NEXT_PUBLIC_API_URL
+  ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, '')
+  : 'http://127.0.0.1:8000';
+
 const nextConfig = {
   reactStrictMode: true,
   async rewrites() {
     return [
       {
         source: '/uploads/:path*',
-        destination: 'http://127.0.0.1:8000/uploads/:path*',
+        destination: `${backendOrigin}/uploads/:path*`,
       },
     ];
   },

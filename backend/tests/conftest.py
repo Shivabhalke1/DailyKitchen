@@ -24,6 +24,11 @@ from backend.app.models.user import Profile, User
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE categories ADD COLUMN default_price NUMERIC(10, 2)"))
+        except Exception:
+            pass
     async with AsyncSessionLocal() as session:
         # Check if catalog seeded
         cat = await session.execute(select(Category).limit(1))

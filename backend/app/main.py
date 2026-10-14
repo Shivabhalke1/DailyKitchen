@@ -30,12 +30,17 @@ async def lifespan(app: FastAPI):
     upload_dir = os.path.join(os.getcwd(), "uploads")
     os.makedirs(os.path.join(upload_dir, "catalog"), exist_ok=True)
 
-    # Startup: ensure tables are created in development if using sqlite
-    if "sqlite" in settings.DATABASE_URL:
-        async with engine.begin() as conn:
+    # Startup: ensure tables exist and schema migrations are applied
+    async with engine.begin() as conn:
+        if "sqlite" in settings.DATABASE_URL:
             await conn.run_sync(Base.metadata.create_all)
             try:
                 await conn.execute(text("ALTER TABLE categories ADD COLUMN default_price NUMERIC(10, 2)"))
+            except Exception:
+                pass
+        else:
+            try:
+                await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS default_price NUMERIC(10, 2)"))
             except Exception:
                 pass
     yield
@@ -74,9 +79,17 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        headers["Access-Control-Allow-Headers"] = "*"
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal Server Error", "error": str(exc)},
+        headers=headers,
     )
 
 # Mount versioned API routes
