@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import { colors, radii } from '@dailykitchen/tokens';
+import { colors, radii } from './src/shared/tokens';
 
 const config: Config = {
   content: [
