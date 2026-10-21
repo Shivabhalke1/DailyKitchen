@@ -54,37 +54,44 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  const imageUrl = resolveMediaUrl(product.image_url);
+
   return (
     <View style={styles.cardContainer}>
-      {/* Produce Image & Badges */}
-      <View style={styles.imageContainer}>
-        {resolveMediaUrl(product.image_url) ? (
-          <Image
-            source={{ uri: resolveMediaUrl(product.image_url)! }}
-            style={styles.produceImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.imageFallback}>
-            <Leaf size={32} color={theme.colors.primary[600]} />
-          </View>
-        )}
+      {/* Left: Square Produce Image */}
+      <View style={styles.imageWrapper}>
+        <View style={styles.imageContainer}>
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.produceImage}
+              resizeMode="contain"
+            />
+          ) : (
+            <View style={styles.imageFallback}>
+              <Leaf size={28} color={theme.colors.primary[600]} />
+            </View>
+          )}
 
-        {product.is_fresh_today && (
-          <View style={styles.freshBadge}>
-            <Sparkles size={10} color="#065F46" />
-            <Text style={styles.freshBadgeText}>Morning Harvest</Text>
-          </View>
-        )}
+          {product.is_fresh_today && (
+            <View style={styles.freshBadge}>
+              <Sparkles size={8} color="#065F46" />
+              <Text style={styles.freshBadgeText}>Fresh</Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* Details */}
+      {/* Right: Details, Variants & Actions */}
       <View style={styles.detailsContainer}>
-        <Text style={styles.productName} numberOfLines={1}>
-          {product.name}
-        </Text>
+        {/* Top: Name & Category */}
+        <View style={styles.headerRow}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {product.name}
+          </Text>
+        </View>
 
-        {/* Variant Picker Chips if multiple variants */}
+        {/* Variants / Weight Chips */}
         {variants.length > 1 ? (
           <View style={styles.variantChipsRow}>
             {variants.map((v) => {
@@ -130,6 +137,7 @@ export function ProductCard({ product }: ProductCardProps) {
               style={styles.addButton}
               onPress={handleAdd}
               disabled={isUpdating}
+              activeOpacity={0.7}
             >
               <Text style={styles.addButtonText}>ADD</Text>
             </TouchableOpacity>
@@ -139,6 +147,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 style={styles.stepperButton}
                 onPress={handleDecrement}
                 disabled={isUpdating}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
                 <Minus size={14} color={theme.colors.primary[800]} />
               </TouchableOpacity>
@@ -147,6 +156,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 style={styles.stepperButton}
                 onPress={handleIncrement}
                 disabled={isUpdating || currentQty >= 20}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
                 <Plus size={14} color={theme.colors.primary[800]} />
               </TouchableOpacity>
@@ -161,22 +171,34 @@ export function ProductCard({ product }: ProductCardProps) {
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: theme.colors.neutral.white,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     borderWidth: 1,
-    borderColor: theme.colors.neutral[200],
-    overflow: 'hidden',
-    shadowColor: '#000',
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    padding: 12,
+    marginBottom: theme.spacing[3],
+    shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 2,
-    marginBottom: theme.spacing[3],
+    alignItems: 'center',
+  },
+  imageWrapper: {
+    position: 'relative',
   },
   imageContainer: {
-    height: 125,
-    width: '100%',
-    backgroundColor: theme.colors.neutral[100],
+    width: 96,
+    height: 96,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
     position: 'relative',
+    padding: 4,
   },
   produceImage: {
     width: '100%',
@@ -189,44 +211,52 @@ const styles = StyleSheet.create({
   },
   freshBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    top: 4,
+    left: 4,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: theme.borderRadius.full,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     borderWidth: 0.5,
-    borderColor: '#A7F3D0',
+    borderColor: '#86EFAC',
   },
   freshBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
-    color: '#065F46',
+    color: '#166534',
   },
   detailsContainer: {
-    padding: theme.spacing[3],
-    gap: theme.spacing[2],
+    flex: 1,
+    marginLeft: 14,
+    minHeight: 96,
+    justifyContent: 'space-between',
+  },
+  headerRow: {
+    marginBottom: 4,
   },
   productName: {
     fontSize: theme.typography.fontSize.sm,
     fontWeight: '700',
     color: theme.colors.neutral[900],
+    lineHeight: 18,
   },
   singleWeightText: {
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.neutral[500],
     fontWeight: '500',
+    marginBottom: 6,
   },
   variantChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
+    marginBottom: 6,
   },
   variantChip: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: theme.borderRadius.sm,
     borderWidth: 1,
@@ -250,7 +280,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   priceWrap: {
     flexDirection: 'row',
@@ -276,6 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 70,
   },
   addButtonText: {
     color: theme.colors.primary[800],
@@ -300,18 +331,18 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primary[600],
     borderWidth: 1.5,
     borderRadius: theme.borderRadius.md,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     gap: 8,
   },
   stepperButton: {
-    padding: 4,
+    padding: 2,
   },
   stepperQuantity: {
     fontSize: theme.typography.fontSize.xs,
     fontWeight: '800',
     color: theme.colors.primary[900],
-    minWidth: 14,
+    minWidth: 16,
     textAlign: 'center',
   },
 });
