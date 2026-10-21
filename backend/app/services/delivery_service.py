@@ -60,6 +60,8 @@ class DeliveryService:
             stmt = stmt.where(DeliverySlot.zone_id == zone_id)
         if slot_date:
             stmt = stmt.where(DeliverySlot.slot_date == slot_date)
+        else:
+            stmt = stmt.where(DeliverySlot.slot_date >= date.today())
         if slot_type:
             stmt = stmt.where(DeliverySlot.slot_type == slot_type)
 

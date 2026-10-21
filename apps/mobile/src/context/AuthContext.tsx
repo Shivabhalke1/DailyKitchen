@@ -16,8 +16,17 @@ interface AuthContextType {
   isAuthModalOpen: boolean;
   openAuthModal: () => void;
   closeAuthModal: () => void;
+  loginWithPassword: (identifier: string, password: string) => Promise<UserRead | null>;
+  registerWithPassword: (
+    fullName: string,
+    phone: string,
+    password: string,
+    email?: string
+  ) => Promise<UserRead | null>;
   requestOtp: (phone: string) => Promise<{ cooldown_seconds: number; expires_in_seconds: number }>;
   verifyOtp: (phone: string, otp: string) => Promise<UserRead | null>;
+  requestPasswordReset: (identifier: string) => Promise<{ message: string; reset_token?: string | null }>;
+  confirmPasswordReset: (token: string, newPassword: string) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -88,9 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const verifyOtp = useCallback(async (phone: string, otp: string) => {
-    const tokenData = await api.auth.verifyOtp(phone, otp, 'login');
-
+  const handleAuthSuccess = useCallback(async (tokenData: any) => {
     setAccessToken(tokenData.access_token);
 
     if (tokenData.refresh_token) {
@@ -105,6 +112,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsAuthModalOpen(false);
     return userData;
+  }, []);
+
+  const loginWithPassword = useCallback(
+    async (identifier: string, password: string) => {
+      const tokenData = await api.auth.login(identifier, password);
+      return handleAuthSuccess(tokenData);
+    },
+    [handleAuthSuccess]
+  );
+
+  const registerWithPassword = useCallback(
+    async (fullName: string, phone: string, password: string, email?: string) => {
+      const tokenData = await api.auth.register({
+        fullName,
+        phone,
+        password,
+        email,
+      });
+      return handleAuthSuccess(tokenData);
+    },
+    [handleAuthSuccess]
+  );
+
+  const verifyOtp = useCallback(
+    async (phone: string, otp: string) => {
+      const tokenData = await api.auth.verifyOtp(phone, otp, 'login');
+      return handleAuthSuccess(tokenData);
+    },
+    [handleAuthSuccess]
+  );
+
+  const requestPasswordReset = useCallback(async (identifier: string) => {
+    const res = await api.auth.requestPasswordReset(identifier);
+    return {
+      message: res.message,
+      reset_token: res.reset_token,
+    };
+  }, []);
+
+  const confirmPasswordReset = useCallback(async (token: string, newPassword: string) => {
+    return api.auth.confirmPasswordReset(token, newPassword);
   }, []);
 
   const logout = useCallback(async () => {
@@ -135,8 +183,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthModalOpen,
         openAuthModal: () => setIsAuthModalOpen(true),
         closeAuthModal: () => setIsAuthModalOpen(false),
+        loginWithPassword,
+        registerWithPassword,
         requestOtp,
         verifyOtp,
+        requestPasswordReset,
+        confirmPasswordReset,
         logout,
         refreshProfile,
       }}

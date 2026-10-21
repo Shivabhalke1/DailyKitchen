@@ -41,7 +41,7 @@ export default function CartScreen() {
           Sign in to access your saved produce items and proceed to checkout.
         </Text>
         <TouchableOpacity style={styles.primaryBtn} onPress={openAuthModal}>
-          <Text style={styles.primaryBtnText}>Log In with Mobile Number</Text>
+          <Text style={styles.primaryBtnText}>Log In or Register</Text>
         </TouchableOpacity>
       </View>
     );

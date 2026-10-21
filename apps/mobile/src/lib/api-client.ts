@@ -26,6 +26,7 @@ export type OrderItemRead = components['schemas']['OrderItemRead'];
 export type OrderCreate = components['schemas']['OrderCreate'];
 export type PaginatedOrderRead = components['schemas']['PaginatedOrderRead'];
 export type PaymentRead = components['schemas']['PaymentRead'];
+export type PasswordResetResponse = components['schemas']['PasswordResetResponse'];
 
 export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'dk_mobile_refresh_token',
@@ -47,6 +48,17 @@ export function getBackendBaseUrl(): string {
 
   // iOS simulator, macOS, and Web preview use localhost
   return 'http://localhost:8000/api/v1';
+}
+
+/**
+ * Resolves a media or image URL from backend. If relative (/uploads/...),
+ * prefixes it with the backend host so React Native <Image> can load it.
+ */
+export function resolveMediaUrl(path?: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const baseUrl = getBackendBaseUrl().replace(/\/api\/v1\/?$/, '');
+  return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
 export class ApiError extends Error {
@@ -238,6 +250,47 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ phone, otp, purpose }),
       }),
+
+    getTestOtp: (phone: string) =>
+      request<{ phone: string; otp: string }>(
+        `/auth/test/last-otp?phone=${encodeURIComponent(phone)}`,
+        { method: 'GET' }
+      ),
+
+    register: (payload: { fullName: string; phone: string; password: string; email?: string }) =>
+      request<AuthTokenResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          full_name: payload.fullName,
+          phone: payload.phone,
+          password: payload.password,
+          email: payload.email || undefined,
+        }),
+      }),
+
+    login: (identifier: string, password: string) =>
+      request<AuthTokenResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ identifier, password }),
+      }),
+
+    requestPasswordReset: (identifier: string) =>
+      request<PasswordResetResponse>('/auth/password-reset/request', {
+        method: 'POST',
+        body: JSON.stringify({ identifier }),
+      }),
+
+    confirmPasswordReset: (token: string, newPassword: string) =>
+      request<{ message: string }>('/auth/password-reset/confirm', {
+        method: 'POST',
+        body: JSON.stringify({ token, new_password: newPassword }),
+      }),
+
+    getTestResetToken: (identifier: string) =>
+      request<{ identifier: string; token: string }>(
+        `/auth/test/last-reset-token?identifier=${encodeURIComponent(identifier)}`,
+        { method: 'GET' }
+      ),
 
     getMe: () =>
       request<UserRead>('/auth/me', {

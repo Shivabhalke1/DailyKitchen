@@ -43,14 +43,14 @@ export default function CheckoutScreen() {
   // Inline Add Address State
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newAddr, setNewAddr] = useState<AddressCreate>({
-    full_name: '',
-    phone: user?.phone || '+919876543210',
+    full_name: user?.profile?.full_name || '',
+    phone: user?.phone || '',
     house_flat: '',
     street_area: '',
     landmark: '',
-    city: 'Bengaluru',
+    city: 'Bidar',
     state: 'Karnataka',
-    pincode: pincode || '560034',
+    pincode: pincode || '585401',
     label: 'home',
     is_default: true,
   });
@@ -101,8 +101,8 @@ export default function CheckoutScreen() {
     try {
       const created = await api.users.createAddress({
         ...newAddr,
-        phone: newAddr.phone || user?.phone || '+919876543210',
-        full_name: newAddr.full_name || 'Customer',
+        phone: newAddr.phone || user?.phone || '',
+        full_name: newAddr.full_name || user?.profile?.full_name || 'Customer',
       });
       setAddresses((prev) => [...prev, created]);
       setSelectedAddressId(created.id);

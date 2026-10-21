@@ -14,7 +14,7 @@ interface LocationContextType {
 }
 
 const PINCODE_STORAGE_KEY = 'dk_mobile_pincode';
-const DEFAULT_PINCODE = '560034'; // Default Bangalore development convenience fixture
+const DEFAULT_PINCODE = '585401'; // Default Bidar serviceable operating zone
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 

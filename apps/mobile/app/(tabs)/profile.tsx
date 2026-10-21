@@ -50,10 +50,10 @@ export default function MobileProfileScreen() {
         </View>
         <Text style={styles.authTitle}>Your DailyKitchen Account</Text>
         <Text style={styles.authSubtitle}>
-          Log in with your mobile number to view saved addresses and delivery details.
+          Log in or register to view saved addresses and delivery details.
         </Text>
         <TouchableOpacity style={styles.primaryBtn} onPress={openAuthModal}>
-          <Text style={styles.primaryBtnText}>Log In with Mobile Number</Text>
+          <Text style={styles.primaryBtnText}>Log In or Register</Text>
         </TouchableOpacity>
       </View>
     );

@@ -16,9 +16,11 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#15803d"
       },
-      "package": "com.dailykitchen.app"
+      "package": "com.dailykitchen.app",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro"

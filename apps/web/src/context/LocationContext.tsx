@@ -17,7 +17,7 @@ interface LocationContextType {
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
-const DEFAULT_PINCODE = '560034';
+const DEFAULT_PINCODE = '585401';
 const PINCODE_STORAGE_KEY = 'dk_customer_pincode';
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
@@ -43,7 +43,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!res.is_serviceable) {
-        setError(`We currently do not deliver to PIN code ${code}. Try 560034 or 560066.`);
+        setError(`We currently do not deliver to PIN code ${code}. Our active delivery zone is 585401 (Bidar).`);
         return false;
       }
 

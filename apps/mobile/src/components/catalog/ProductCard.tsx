@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { ProductRead, ProductVariantRead } from '../../lib/api-client';
+import { ProductRead, ProductVariantRead, resolveMediaUrl } from '../../lib/api-client';
 import { useCart } from '../../context/CartContext';
 import { theme } from '../../theme';
 import { formatINR } from '@dailykitchen/shared-utils';
@@ -58,9 +58,9 @@ export function ProductCard({ product }: ProductCardProps) {
     <View style={styles.cardContainer}>
       {/* Produce Image & Badges */}
       <View style={styles.imageContainer}>
-        {product.image_url ? (
+        {resolveMediaUrl(product.image_url) ? (
           <Image
-            source={{ uri: product.image_url }}
+            source={{ uri: resolveMediaUrl(product.image_url)! }}
             style={styles.produceImage}
             resizeMode="cover"
           />

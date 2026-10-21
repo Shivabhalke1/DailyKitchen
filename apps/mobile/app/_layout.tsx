@@ -9,7 +9,7 @@ import { theme } from '../src/theme';
 export default function RootLayout() {
   return (
     <AppProviders>
-      <StatusBar style="light" backgroundColor={theme.colors.primary[800]} />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerStyle: {
