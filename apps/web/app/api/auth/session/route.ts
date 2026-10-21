@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const BACKEND_BASE_URL =
   process.env.INTERNAL_BACKEND_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8000/api/v1';
+  'https://dailykitchen.onrender.com/api/v1';
 
 const REFRESH_COOKIE_NAME = 'dk_refresh_token';
 const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
