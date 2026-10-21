@@ -7,6 +7,7 @@ from backend.app.models.catalog import (
     ProductVariant,
     Inventory,
     InventoryReservation,
+    UploadedImage,
 )
 from backend.app.models.cart import Cart, CartItem
 from backend.app.models.delivery import DeliveryZone, DeliverySlot
@@ -30,12 +31,13 @@ __all__ = [
     "OtpChallenge",
     "UserSession",
     "PasswordResetToken",
-    # 2. Catalog & Inventory (5 models)
+    # 2. Catalog & Inventory (6 models)
     "Category",
     "Product",
     "ProductVariant",
     "Inventory",
     "InventoryReservation",
+    "UploadedImage",
     # 3. Shopping Cart (2 models)
     "Cart",
     "CartItem",

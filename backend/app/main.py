@@ -1,17 +1,20 @@
 import os
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import text
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import FileResponse, JSONResponse, Response
 
 from backend.app.core.config import settings
+from backend.app.api.deps import get_db
 from backend.app.api.v1.api import api_router
 from backend.app.db.session import engine
 from backend.app.db.base import Base
+from backend.app.models.catalog import UploadedImage
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -32,8 +35,8 @@ async def lifespan(app: FastAPI):
 
     # Startup: ensure tables exist and schema migrations are applied
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
         if "sqlite" in settings.DATABASE_URL:
-            await conn.run_sync(Base.metadata.create_all)
             try:
                 await conn.execute(text("ALTER TABLE categories ADD COLUMN default_price NUMERIC(10, 2)"))
             except Exception:
@@ -57,7 +60,39 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Mount local uploads directory for stored images
+# Persistent catalog image serving (serves from local cache or database fallback)
+@app.get("/uploads/catalog/{filename}")
+async def get_catalog_image(filename: str, db: AsyncSession = Depends(get_db)):
+    # 1. Fast local disk cache check
+    local_path = os.path.join(os.getcwd(), "uploads", "catalog", filename)
+    if os.path.exists(local_path):
+        return FileResponse(
+            local_path,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    # 2. Database lookup (persisted permanently across Render sleep cycles / redeploys)
+    stmt = select(UploadedImage).where(UploadedImage.filename == filename)
+    res = await db.execute(stmt)
+    record = res.scalar_one_or_none()
+    if record:
+        # Re-write to local disk cache for subsequent requests
+        try:
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "wb") as f:
+                f.write(record.data)
+        except Exception:
+            pass
+        return Response(
+            content=record.data,
+            media_type=record.content_type,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
+    return JSONResponse(status_code=404, content={"detail": "Image not found"})
+
+
+# Mount local uploads directory for any other static files
 upload_dir = os.path.join(os.getcwd(), "uploads")
 os.makedirs(os.path.join(upload_dir, "catalog"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")

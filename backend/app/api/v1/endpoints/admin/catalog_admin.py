@@ -8,7 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.app.api.deps import get_db
-from backend.app.models.catalog import Category, Inventory, Product, ProductVariant
+from backend.app.models.catalog import (
+    Category,
+    Inventory,
+    Product,
+    ProductVariant,
+    UploadedImage,
+)
 from backend.app.models.order import OrderItem
 from backend.app.schemas.catalog import (
     CategoryCreate,
@@ -35,10 +41,11 @@ MAX_IMAGE_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 @router.post("/upload-image")
 async def upload_catalog_image(
     file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Admin: upload an image file from the device/file picker for categories or produce items.
-    Validates file type, size, and image integrity, then stores in /uploads/catalog/.
+    Validates file type, size, and image integrity, then stores in PostgreSQL and /uploads/catalog/.
     """
     if not file.filename:
         raise HTTPException(
@@ -85,13 +92,27 @@ async def upload_catalog_image(
 
     # Generate safe unique filename
     safe_name = f"{uuid.uuid4().hex}{ext}"
-    target_dir = os.path.join(os.getcwd(), "uploads", "catalog")
-    os.makedirs(target_dir, exist_ok=True)
-    target_path = os.path.join(target_dir, safe_name)
+    content_type_str = file.content_type or f"image/{ext.lstrip('.')}"
 
-    # Write file to disk
-    with open(target_path, "wb") as f:
-        f.write(contents)
+    # 1. Persist directly into database to survive ephemeral container restarts & sleep cycles
+    image_record = UploadedImage(
+        filename=safe_name,
+        content_type=content_type_str,
+        data=contents,
+        size_bytes=len(contents),
+    )
+    db.add(image_record)
+    await db.commit()
+
+    # 2. Write file to disk as high-performance local cache
+    try:
+        target_dir = os.path.join(os.getcwd(), "uploads", "catalog")
+        os.makedirs(target_dir, exist_ok=True)
+        target_path = os.path.join(target_dir, safe_name)
+        with open(target_path, "wb") as f:
+            f.write(contents)
+    except Exception:
+        pass
 
     relative_url = f"/uploads/catalog/{safe_name}"
     return {
@@ -100,7 +121,7 @@ async def upload_catalog_image(
         "filename": safe_name,
         "original_filename": file.filename,
         "size_bytes": len(contents),
-        "content_type": file.content_type or f"image/{ext.lstrip('.')}",
+        "content_type": content_type_str,
     }
 
 

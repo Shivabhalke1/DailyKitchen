@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     Numeric,
     String,
     Text,
@@ -359,3 +360,34 @@ class InventoryReservation(Base, TimestampMixin):
         "Order",
         back_populates="reservations",
     )
+
+
+class UploadedImage(Base, TimestampMixin):
+    """Persistent storage for uploaded images across ephemeral cloud restarts."""
+
+    __tablename__ = "uploaded_images"
+
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+    filename: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    content_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+    data: Mapped[bytes] = mapped_column(
+        LargeBinary,
+        nullable=False,
+    )
+    size_bytes: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
